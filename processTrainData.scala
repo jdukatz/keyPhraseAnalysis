@@ -42,7 +42,7 @@ class ConLLDataPreproccesor() {
 		val src = Source.fromFile(txtFileName)
 		var doc = nlpProc.annotate(src.getLines.mkString("\n"))
 
-		var fileString = outputDir + "/" + txtFileName.slice(6, txtFileName.length)
+		var fileString = outputDir + "/" + txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".conll")
 		val bw = new BufferedWriter(new FileWriter(new File(fileString)))
 
 		for (s <- doc.sentences) {
