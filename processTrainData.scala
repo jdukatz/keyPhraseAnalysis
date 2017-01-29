@@ -17,12 +17,10 @@ object ProcessTrainData {
 		for (txtFile <- txtFiles) {
 			//retrieve the corresponding .ann files
 			var annFileName = directory + "/" + txtFile.getName.replaceAll(".txt", ".ann")
-			//var annFile = new File(annFileName)
 			var txtFileName = directory + "/" + txtFile.getName
 
-			println("----POS TAGGING FILES----")
 			cdp.posTag(txtFileName)
-			//cdp.applyNERLabels(txtFileName, annFileName)
+			cdp.applyNERLabels(txtFileName, annFileName)
 		}
 
 	}
@@ -42,7 +40,7 @@ class ConLLDataPreproccesor() {
 		val src = Source.fromFile(txtFileName)
 		var doc = nlpProc.annotate(src.getLines.mkString("\n"))
 
-		var fileString = outputDir + "/" + txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".conll")
+		var fileString = outputDir + "/" + txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".pos")
 		val bw = new BufferedWriter(new FileWriter(new File(fileString)))
 
 		for (s <- doc.sentences) {
@@ -63,29 +61,71 @@ class ConLLDataPreproccesor() {
 	}
 
 	def applyNERLabels(txtFileName:String, annFileName:String) {
-		//annotate text with NER tags from .ann file
-		//println("I'm applying NER tags from " + annFile.getName + " to " + txtFile.getName + "!")
-		var rawText = Source.fromFile(txtFileName)
+
 		var namedEntities = Source.fromFile(annFileName).getLines.toList
-		var posTaggedFile = Source.fromFile("annotatedFiles/" + (txtFileName))
+		var posTaggedFile = Source.fromFile("annotatedFiles/" + (txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".pos")))
+
+		var termsList:List[(String, String)] = List() //list to store terms and categorys
+
 		for (line <- namedEntities) {
 			var splitData = line.split("\t")
 
 			//there are relation annotations in .ann files; only using terms for now
 			if (splitData(0).startsWith("T") == true) {
-				var category = splitData(1) //category and position
+				var category = defineCategory(splitData(1)) //category and position
 				var text = splitData(2) //string (possibly multi-word)
-				var positionStart = category.split(" ")(1).toInt
-				var positionEnd = category.split(" ")(2).toInt
 
-				var wordInText = rawText.slice(positionStart, positionEnd)
-
-
+				termsList = termsList :+ (text, category)
 			}
 		}
+
+		var fileString = outputDir + txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".conll")
+		val bw = new BufferedWriter(new FileWriter(new File(fileString)))
+
+		var counter = 0
+		for (line <- posTaggedFile.getLines) {
+
+			var word = line.split("\t")(0)
+
+			try {
+				if (termsList(counter)._1.startsWith(word) == true) {
+					//B-category
+					bw.write(line.stripLineEnd + "\tB-" + termsList(counter)._2 + "\n")
+				} else if (termsList(counter)._1.endsWith(word) == true) {
+					//I-category
+					bw.write(line.stripLineEnd + "\tI-" + termsList(counter)._2 + "\n")
+					counter += 1
+				} else if ((termsList(counter)._1 contains word) == true) {
+					//I-category
+					bw.write(line.stripLineEnd + "\tI-" + termsList(counter)._2 + "\n")
+				} else { //not a term
+					//O
+					bw.write(line.stripLineEnd + "\tO\n")
+				}
+			} catch {
+				//we've labelled all the terms from the .ann, so put O on everything else
+				case iob:IndexOutOfBoundsException => bw.write(line.stripLineEnd + "\tO\n")
+			}
+		}
+		posTaggedFile.close
+		bw.close
+
+		val oldFile = new File(fileString.replaceAll(".conll", ".pos"))
+		oldFile.delete
 	}
 
-	def outputConllFile() {
-		//will take in data and arrange into file
+	def defineCategory(rawCat:String):String = {
+		val cat = rawCat.split(" ")(0)
+		var letter:String = ""
+		if (cat == "Process") {
+			letter = "P"
+		} else if (cat == "Material") {
+			letter = "M"
+		} else if (cat == "Task") {
+			letter = "T"
+		}
+
+		letter
+
 	}
 }
