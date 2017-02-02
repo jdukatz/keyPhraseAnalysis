@@ -40,7 +40,7 @@ class ConLLDataPreproccesor() {
 		val src = Source.fromFile(txtFileName)
 		var doc = nlpProc.annotate(src.getLines.mkString("\n"))
 
-		var fileString = outputDir + "/" + txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".pos")
+		var fileString = outputDir + "/" + txtFileName.substring(txtFileName.lastIndexOf("/") + 1).replaceAll(".txt", ".pos")
 		val bw = new BufferedWriter(new FileWriter(new File(fileString)))
 
 		for (s <- doc.sentences) {
@@ -65,7 +65,7 @@ class ConLLDataPreproccesor() {
 	def applyNERLabels(txtFileName:String, annFileName:String) {
 
 		var namedEntities = Source.fromFile(annFileName).getLines.toList
-		var posTaggedFile = Source.fromFile("annotatedFiles/" + (txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".pos")))
+		var posTaggedFile = Source.fromFile("annotatedFiles/" + (txtFileName.substring(txtFileName.lastIndexOf("/") + 1).replaceAll(".txt", ".pos")))
 		//println("Applying NER labels from" + annFileName)
 
 		var termsList:List[(String, String, Int, Int)] = List() //list to store terms, cats, and positions
@@ -85,7 +85,7 @@ class ConLLDataPreproccesor() {
 			}
 		}
 
-		var fileString = outputDir + txtFileName.slice(6, txtFileName.length).replaceAll(".txt", ".conll")
+		var fileString = outputDir + "/" + txtFileName.substring(txtFileName.lastIndexOf("/") + 1).replaceAll(".txt", ".conll")
 		val bw = new BufferedWriter(new FileWriter(new File(fileString)))
 
 		var counter = 0
