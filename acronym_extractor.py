@@ -2,21 +2,20 @@ import os
 from nltk.tokenize import word_tokenize
 import re
 
-def main():
+#def main():
+def getAcronyms(file):
 	pattern = r'^[A-Z]{3,5}'
 
-	files = os.listdir('splitData/trainData')
 	acr_dict = {}
-	for file in files:
-		if file[-4:] == '.txt':
-			f = open('splitData/trainData/' + file)
-			text = f.read()
-			tokens = word_tokenize(text)
-			for t in tokens:
-				if re.search(pattern, t):
-					match = find_words_for_acr(t, tokens)
-					acr_dict.update(match)
-	print(acr_dict)
+	if file[-4:] == '.txt':
+		f = open(file)
+		text = f.read()
+		tokens = word_tokenize(text)
+		for t in tokens:
+			if re.search(pattern, t):
+				match = find_words_for_acr(t, tokens)
+				acr_dict.update(match)
+	return acr_dict
 
 def find_words_for_acr(acronym, tokens):
 	num_words = len(acronym)
@@ -33,4 +32,4 @@ def find_words_for_acr(acronym, tokens):
 		i += 1
 	return match
 
-if __name__=='__main__': main()
+#if __name__=='__main__': main()
